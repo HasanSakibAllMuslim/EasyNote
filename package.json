@@ -15,7 +15,7 @@
     "dist:dir": "electron-builder --win nsis --dir"
   },
   "devDependencies": {
-    "electron": "^39.0.0",
+    "electron": "^45.3.1",
     "electron-builder": "^26.0.12",
     "png-to-ico": "^3.0.2"
   },
