@@ -5,18 +5,23 @@ import { drawObject } from "./render.js";
 // Heavy PDF libraries load only when a PDF is actually used (faster start).
 let _pdfjs;
 function pdfjs() {
-  return (_pdfjs ||= import("https://cdn.jsdelivr.net/npm/pdfjs-dist@4.7.76/build/pdf.min.mjs").then((lib) => {
-    lib.GlobalWorkerOptions.workerSrc = "https://cdn.jsdelivr.net/npm/pdfjs-dist@4.7.76/build/pdf.worker.min.mjs";
+	return (_pdfjs ||= import("../libs/pdf.min.mjs").then((lib) => {
+		lib.GlobalWorkerOptions.workerSrc = new URL("../libs/pdf.worker.min.mjs", import.meta.url).href;
     return lib;
   }));
 }
-const openPdf = async (bytes) => (await pdfjs()).getDocument({ data: bytes.slice() }).promise;
+const openPdf = async (bytes) => (await pdfjs()).getDocument({
+	data: bytes.slice(),
+	cMapUrl: new URL("../libs/pdfjs/cmaps/", import.meta.url).href,
+	cMapPacked: true,
+	standardFontDataUrl: new URL("../libs/pdfjs/standard_fonts/", import.meta.url).href
+}).promise;
 let _pdflib;
 function pdfLib() {
   return (_pdflib ||= new Promise((res, rej) => {
     if (window.PDFLib) return res(window.PDFLib);
-    const s = document.createElement("script"); s.src = "https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js";
-    s.onload = () => res(window.PDFLib); s.onerror = () => { _pdflib = null; rej(new Error("Couldn't load the PDF tools. Check your internet.")); };
+		const s = document.createElement("script"); s.src = "/libs/pdf-lib.min.js";
+		s.onload = () => res(window.PDFLib); s.onerror = () => { _pdflib = null; rej(new Error("Couldn't load the local PDF tools.")); };
     document.head.appendChild(s);
   }));
 }

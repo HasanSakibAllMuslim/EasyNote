@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; worker-src 'self' blob:; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-src 'none'" />
   <title>EasyNote</title>
   <link rel="icon" href="/assets/logo.svg" type="image/svg+xml" />
   <meta name="description" content="EasyNote — a smart board for teaching. Write on PDFs and blank boards with clean shapes, highlights and auto cloud save." />
@@ -28,14 +29,10 @@
   <meta property="og:image:alt" content="EasyNote logo" />
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:image" content="https://tools-hsccrackers.web.app/assets/og-image.jpg?v=3" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/css/inter.css" />
   <link rel="stylesheet" href="/css/style.css" />
   <!-- Phones get a notice; computers, smartboards and iPads load the app -->
   <script src="/js/device-gate.js"></script>
-  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
-  <link rel="preconnect" href="https://firestore.googleapis.com" crossorigin />
-  <link rel="modulepreload" href="https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js" />
 </head>
 <body>
   <!-- Loading -->

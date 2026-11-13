@@ -1,0 +1,11 @@
+﻿{
+  "name": "easynote",
+  "short_name": "EasyNote",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0b0d0a",
+  "theme_color": "#0b0d0a",
+  "icons": [
+    { "src": "/assets/apple-touch-icon.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}

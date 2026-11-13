@@ -23,7 +23,7 @@
 
 Notebook content and imported PDF bytes are stored in the app's local IndexedDB database. The desktop app uses the stable `easynote://app` origin so its local notebooks remain available between launches. The installer is configured to leave app data in place when EasyNote is uninstalled.
 
-The current app loads PDF.js and PDF-Lib from jsDelivr and the Inter font from Google Fonts. Those features therefore make network requests and may be unavailable offline. The active offline data layer does not upload notebooks to Firebase; Firebase-related files in the repository are not imported by the current app entry point.
+The desktop app bundles PDF.js, PDF-Lib, and the Inter font locally. Its active data layer stores notebooks and imported PDF bytes in IndexedDB; Firebase-related files remain in the repository for reference but are not imported by the current app entry point. Opening user-selected external links and using the payment links still requires internet access.
 
 ## Run from source
 
@@ -36,7 +36,7 @@ npm start
 
 ## Windows installer
 
-The project uses Electron and electron-builder to create a per-user Windows x64 NSIS installer. The existing release artifact is `dist/EasyNote-Setup-1.0.0.exe`.
+The project uses Electron and electron-builder to create a per-user Windows x64 NSIS installer. A local build is written to `dist/EasyNote-Setup-1.0.0.exe`; keep generated installers out of source history.
 
 To build a new installer, run:
 
@@ -45,13 +45,15 @@ npm ci
 npm run dist
 ```
 
-The current `prepare:icon` build step expects a square PNG at `build/logo.png` and generates `build/icon.ico` from it. The checked-in `build/icon.ico` is the Windows icon used by the existing packaged app; a rebuild will need the PNG input expected by the script.
+The `prepare:icon` build step prefers `build/logo.png` when present and otherwise uses the supplied `build/icon.png` to generate `build/icon.ico`. The Windows x64 installer includes the full Electron/Chromium runtime and the local PDF.js, PDF-Lib, and Inter assets.
 
-The existing installer is 103,236,212 bytes (about 98.5 MiB). That exceeds GitHub's browser upload limit and the Contents API's 100 MB limit, although it is just below GitHub's 100 MiB hard limit for Git pushes. Keep this binary out of source history and distribute it as a GitHub Release asset. The `.blockmap` is an Electron differential-update artifact; this app does not currently implement auto-update.
+The GitHub Actions workflow builds an unsigned Windows x64 installer and uploads it as the `EasyNote-Windows-x64-Unsigned` workflow artifact. It does not publish a GitHub Release or sign the installer.
+
+The `.blockmap` is an Electron differential-update artifact; this app does not currently implement auto-update. When a release is approved, distribute the installer as a GitHub Release asset rather than adding it to source history.
 
 ## Code signing policy
 
-EasyNote 1.0.0 is currently unsigned. No SignPath Foundation approval or signing certificate is in place. A public repository alone does not mean a binary is signed or endorsed. This section must be updated with the approved signer, signing process, and team roles before publishing a signed release.
+EasyNote 1.0.0 is currently unsigned. No SignPath Foundation approval or signing certificate is in place, and there is no published GitHub Release yet. A public repository or CI artifact does not mean a binary is signed or endorsed. A signed release requires a verified source build, an approved signer and signing policy, manual signing approval, and published verification details.
 
 ## License status
 
@@ -69,5 +71,4 @@ The SignPath Foundation's free open-source program has additional requirements b
 | `assets/`, `build/` | App artwork and Windows icon resources |
 | `libs/` | Bundled browser-side libraries and supporting files |
 | `scripts/` | Build helper scripts |
-
 

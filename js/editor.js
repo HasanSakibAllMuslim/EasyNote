@@ -500,7 +500,7 @@ export class Editor {
       const pg = await this.pdf.getPage(p.pdfPage);
       const unit = p.w / pg.getViewport({ scale: 1 }).width, vp = pg.getViewport({ scale: unit });
       const tc = await pg.getTextContent(), out = [];
-      const { Util } = await import("https://cdn.jsdelivr.net/npm/pdfjs-dist@4.7.76/build/pdf.min.mjs");
+		const { Util } = await import("../libs/pdf.min.mjs");
       for (const it of tc.items) {
         if (!it.str || !it.str.trim()) continue;
         const tx = Util.transform(vp.transform, it.transform), fh = Math.hypot(tx[2], tx[3]);
