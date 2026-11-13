@@ -1,0 +1,174 @@
+name: SignPath Gateway Windows x64 release
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm_signing:
+        description: Confirm this dispatch is authorized to request production code signatures
+        required: true
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: signpath-release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  signed-release:
+    name: Build, sign, and verify EasyNote
+    if: github.ref == 'refs/heads/main' && inputs.confirm_signing == true
+    runs-on: windows-2025
+    timeout-minutes: 45
+    environment: signpath-production
+
+    steps:
+      - name: Check out protected main source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Node.js 22
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Install locked dependencies
+        run: npm ci
+
+      - name: Run release preflight checks
+        run: npm run test:release
+
+      - name: Audit locked dependencies
+        run: |
+          npm audit --audit-level=moderate
+
+      - name: Download and validate pinned SignPath KSP provider
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $version = '6.2.0'
+          $uri = "https://download.signpath.io/cryptoproviders/windows-ksp/$version/x64/SignPath.Windows.KSP.msi"
+          $expectedHash = '80a091df238708412ac3e0be88d743492ed34ea0ee65043d4b2a5f6f00f5cf46'
+          $msi = Join-Path $env:RUNNER_TEMP 'SignPath.Windows.KSP.msi'
+
+          Invoke-WebRequest -Uri $uri -OutFile $msi
+          $actualHash = (Get-FileHash -LiteralPath $msi -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($actualHash -ne $expectedHash) {
+            throw "SignPath KSP $version SHA-256 mismatch."
+          }
+
+          $signature = Get-AuthenticodeSignature -LiteralPath $msi
+          if ($signature.Status -ne 'Valid' -or $signature.SignerCertificate.Subject -notlike 'CN=SignPath GmbH,*') {
+            throw 'SignPath KSP installer Authenticode verification failed or signer was unexpected.'
+          }
+          "Validated SignPath KSP $version MSI: Authenticode Valid; SHA-256 $actualHash" | Out-File $env:GITHUB_STEP_SUMMARY -Append
+
+      - name: Install SignPath KSP
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $msi = Join-Path $env:RUNNER_TEMP 'SignPath.Windows.KSP.msi'
+          $log = Join-Path $env:RUNNER_TEMP 'signpath-ksp-install.log'
+          & msiexec.exe /i $msi /qn /norestart /L*v $log ADDLOCAL=KSP
+          if ($LASTEXITCODE -ne 0) {
+            throw "SignPath KSP unattended installation failed (exit code $LASTEXITCODE)."
+          }
+
+          $providers = (& certutil.exe -csplist 2>&1 | Out-String)
+          if ($LASTEXITCODE -ne 0 -or $providers -notmatch 'Provider Name:\s*SignPathKSP') {
+            throw 'SignPath KSP provider registration was not found by certutil -csplist.'
+          }
+
+          $signtool = Get-ChildItem -Path "$env:ProgramFiles(x86)\Windows Kits\10\bin\*\x64\signtool.exe" -File -ErrorAction SilentlyContinue |
+            Sort-Object { [version]$_.Directory.Parent.Name } -Descending |
+            Select-Object -First 1
+          if ($null -eq $signtool) {
+            throw 'The 64-bit Windows SDK SignTool.exe was not found on this runner.'
+          }
+          $signtool.Directory.FullName | Out-File -FilePath $env:GITHUB_PATH -Append -Encoding utf8
+
+      - name: Validate public certificate and signing settings
+        shell: pwsh
+        env:
+          SIGNPATH_CERTIFICATE_PATH: ${{ vars.SIGNPATH_CERTIFICATE_PATH }}
+          SIGNPATH_EXPECTED_CERT_SUBJECT: ${{ vars.SIGNPATH_EXPECTED_CERT_SUBJECT }}
+          SIGNPATH_PROJECT_SLUG: ${{ vars.SIGNPATH_PROJECT_SLUG }}
+          SIGNPATH_SIGNING_POLICY_SLUG: ${{ vars.SIGNPATH_SIGNING_POLICY_SLUG }}
+          SIGNPATH_ORGANIZATION_ID: ${{ vars.SIGNPATH_ORGANIZATION_ID }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $required = @(
+            'SIGNPATH_ORGANIZATION_ID', 'SIGNPATH_PROJECT_SLUG', 'SIGNPATH_SIGNING_POLICY_SLUG',
+            'SIGNPATH_CERTIFICATE_PATH', 'SIGNPATH_EXPECTED_CERT_SUBJECT'
+          )
+          $missing = @($required | Where-Object { [string]::IsNullOrWhiteSpace([Environment]::GetEnvironmentVariable($_)) })
+          if ($missing.Count -gt 0) { throw "Missing repository/environment variables: $($missing -join ', ')" }
+
+          $certificatePath = Join-Path $env:GITHUB_WORKSPACE $env:SIGNPATH_CERTIFICATE_PATH
+          if (-not (Test-Path -LiteralPath $certificatePath -PathType Leaf)) {
+            throw 'The public SignPath certificate file was not found at SIGNPATH_CERTIFICATE_PATH.'
+          }
+          $certificate = [System.Security.Cryptography.X509Certificates.X509Certificate2]::new($certificatePath)
+          if ($certificate.Subject -cne $env:SIGNPATH_EXPECTED_CERT_SUBJECT) {
+            throw 'The public certificate subject does not match SIGNPATH_EXPECTED_CERT_SUBJECT.'
+          }
+          "SIGNPATH_CERTIFICATE_FILE=$certificatePath" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+
+      - name: Build, sign app executables, embedded uninstaller, and NSIS installer
+        shell: pwsh
+        env:
+          SIGNPATH_API_TOKEN: ${{ secrets.SIGNPATH_API_TOKEN }}
+          SIGNPATH_ORGANIZATION_ID: ${{ vars.SIGNPATH_ORGANIZATION_ID }}
+          SIGNPATH_PROJECT_SLUG: ${{ vars.SIGNPATH_PROJECT_SLUG }}
+          SIGNPATH_SIGNING_POLICY_SLUG: ${{ vars.SIGNPATH_SIGNING_POLICY_SLUG }}
+          SIGNPATH_EXPECTED_CERT_SUBJECT: ${{ vars.SIGNPATH_EXPECTED_CERT_SUBJECT }}
+          SIGNPATH_TIMESTAMP_URL: ${{ vars.SIGNPATH_TIMESTAMP_URL }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          if ([string]::IsNullOrWhiteSpace($env:SIGNPATH_API_TOKEN)) {
+            throw 'SIGNPATH_API_TOKEN is missing from the signpath-production environment.'
+          }
+          npm run dist:signpath -- --publish never
+
+      - name: Verify every app executable and the final installer
+        id: verify
+        shell: pwsh
+        env:
+          SIGNPATH_EXPECTED_CERT_SUBJECT: ${{ vars.SIGNPATH_EXPECTED_CERT_SUBJECT }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $appExecutables = @(Get-ChildItem -Path 'dist/win-unpacked' -Filter '*.exe' -File -Recurse)
+          if ($appExecutables.Count -eq 0) { throw 'No application executables were found to verify.' }
+
+          $installers = @(Get-ChildItem -Path 'dist' -File -Filter 'EasyNote-Setup-*.exe')
+          if ($installers.Count -ne 1) { throw "Expected one NSIS installer; found $($installers.Count)." }
+
+          $files = @($appExecutables.FullName) + @($installers[0].FullName)
+          foreach ($file in $files) {
+            & powershell.exe -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -File 'scripts/verify-authenticode.ps1' -Path $file -ExpectedSignerSubject $env:SIGNPATH_EXPECTED_CERT_SUBJECT
+            if ($LASTEXITCODE -ne 0) { throw "Final Authenticode/timestamp verification failed for $file." }
+          }
+
+          $sha256 = (Get-FileHash -LiteralPath $installers[0].FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+          "path=$($installers[0].FullName)" >> $env:GITHUB_OUTPUT
+          @(
+            '## EasyNote signed Windows x64 installer (verified)'
+            ''
+            "- File: $($installers[0].Name)"
+            "- Size: $($installers[0].Length) bytes"
+            '- Authenticode: Valid'
+            '- RFC 3161 timestamp: verified'
+            "- SHA-256: $sha256"
+          ) | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8
+
+      - name: Upload verified signed installer
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: EasyNote-Windows-x64-Signed-${{ github.run_number }}
+          path: ${{ steps.verify.outputs.path }}
+          archive: false
+          if-no-files-found: error
+          retention-days: 14

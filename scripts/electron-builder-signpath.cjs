@@ -8,5 +8,6 @@ module.exports = {
 			sign: "./scripts/signpath-ksp-sign.cjs",
 			signingHashAlgorithms: ["sha256"],
 		},
+		signExts: [".exe"],
 	},
 };

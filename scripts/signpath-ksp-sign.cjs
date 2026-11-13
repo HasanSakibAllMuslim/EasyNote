@@ -1,4 +1,5 @@
 const { execFile } = require("node:child_process");
+const path = require("node:path");
 const { promisify } = require("node:util");
 
 const execFileAsync = promisify(execFile);
@@ -11,6 +12,7 @@ function requiredEnvironment(env) {
 		"SIGNPATH_PROJECT_SLUG",
 		"SIGNPATH_SIGNING_POLICY_SLUG",
 		"SIGNPATH_CERTIFICATE_FILE",
+		"SIGNPATH_EXPECTED_CERT_SUBJECT",
 	];
 	const missing = names.filter((name) => !env[name]);
 	if (missing.length) {
@@ -21,6 +23,7 @@ function requiredEnvironment(env) {
 		projectSlug: env.SIGNPATH_PROJECT_SLUG,
 		policySlug: env.SIGNPATH_SIGNING_POLICY_SLUG,
 		certificateFile: env.SIGNPATH_CERTIFICATE_FILE,
+		expectedCertSubject: env.SIGNPATH_EXPECTED_CERT_SUBJECT,
 		timestampUrl: env.SIGNPATH_TIMESTAMP_URL || DEFAULT_TIMESTAMP_URL,
 	};
 }
@@ -43,9 +46,15 @@ async function signWithSignPathKsp(configuration, options = {}) {
 		configuration.path,
 	];
 	const verifyArgs = ["verify", "/pa", "/all", "/v", configuration.path];
+	const timestampCheckArgs = [
+		"-NoLogo", "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass",
+		"-File", path.resolve(__dirname, "verify-authenticode.ps1"),
+		"-Path", configuration.path, "-ExpectedSignerSubject", settings.expectedCertSubject,
+	];
 	try {
 		await run("signtool.exe", signArgs, { windowsHide: true, env });
 		await run("signtool.exe", verifyArgs, { windowsHide: true, env });
+		await run("powershell.exe", timestampCheckArgs, { windowsHide: true, env });
 	} catch (error) {
 		// Do not echo child process output: provider diagnostics may contain sensitive context.
 		const code = Number.isInteger(error && error.code) ? ` (exit code ${error.code})` : "";
