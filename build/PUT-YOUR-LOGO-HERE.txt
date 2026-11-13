@@ -1,0 +1,13 @@
+EasyNote Windows application icon
+
+Put your existing app logo here and name it exactly:
+logo.png
+
+Full path: build/logo.png
+
+Recommended image: square PNG, 512 x 512 pixels, transparent background.
+Do not replace the website/app logo files. This PNG is used only to generate the Windows EXE, installer, taskbar and shortcut icon.
+
+After adding logo.png, run in PowerShell from the project folder:
+npm install
+npm run dist

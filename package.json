@@ -1,0 +1,65 @@
+{
+  "name": "easynote-desktop",
+  "version": "1.0.0",
+  "description": "EasyNote Windows desktop application",
+  "author": "EasyNote",
+  "license": "MIT",
+  "private": true,
+  "main": "electron/main.cjs",
+  "scripts": {
+    "start": "electron .",
+    "prepare:icon": "node scripts/prepare-icon.cjs",
+    "pre-dist": "npm run prepare:icon",
+    "pre-dist:dir": "npm run prepare:icon",
+    "dist": "electron-builder --win nsis",
+    "dist:dir": "electron-builder --win nsis --dir"
+  },
+  "devDependencies": {
+    "electron": "^39.0.0",
+    "electron-builder": "^26.0.12",
+    "png-to-ico": "^3.0.2"
+  },
+  "build": {
+    "appId": "com.easynote.desktop",
+    "productName": "EasyNote",
+    "asar": true,
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "index.html",
+      "css/**/*",
+      "js/**/*",
+      "assets/**/*",
+      "libs/**/*",
+      "electron/**/*",
+      "package.json",
+      "build/**/*",
+      "scripts/**/*"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "artifactName": "EasyNote-Setup-${version}.${ext}",
+      "icon": "build/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "EasyNote",
+      "deleteAppDataOnUninstall": false,
+      "installerIcon": "build/icon.ico",
+      "uninstallerIcon": "build/icon.ico",
+      "installerHeaderIcon": "build/icon.ico"
+    }
+  }
+}

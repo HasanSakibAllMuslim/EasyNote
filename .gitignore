@@ -1,0 +1,15 @@
+node_modules/
+dist/
+.DS_Store
+*.log
+.env
+.env.*
+!.env.example
+*.pem
+*.p12
+*.pfx
+*.key
+*-service-account*.json
+firebase-adminsdk*.json
+*.tmp
+*.temp

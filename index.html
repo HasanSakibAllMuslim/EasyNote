@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>EasyNote</title>
+  <link rel="icon" href="/assets/logo.svg" type="image/svg+xml" />
+  <meta name="description" content="EasyNote — a smart board for teaching. Write on PDFs and blank boards with clean shapes, highlights and auto cloud save." />
+  <meta name="theme-color" content="#0b0d0a" />
+  <!-- Install as an app: runs full screen with no browser bars and no exit prompts -->
+  <link rel="manifest" href="/manifest.webmanifest" />
+  <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="EasyNote" />
+  <!-- Link preview (WhatsApp, Facebook, Messenger, etc.) -->
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="EasyNote" />
+  <meta property="og:title" content="EasyNote — Smart board for teaching" />
+  <meta property="og:description" content="Write on PDFs and blank boards with clean shapes, highlights and auto cloud save." />
+  <meta property="og:url" content="https://tools-hsccrackers.web.app/" />
+  <meta property="og:image" content="https://tools-hsccrackers.web.app/assets/og-image.jpg?v=3" />
+  <meta property="og:image:secure_url" content="https://tools-hsccrackers.web.app/assets/og-image.jpg?v=3" />
+  <meta property="og:image:type" content="image/jpeg" />
+  <meta property="og:image:width" content="960" />
+  <meta property="og:image:height" content="540" />
+  <meta property="og:image:alt" content="EasyNote logo" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:image" content="https://tools-hsccrackers.web.app/assets/og-image.jpg?v=3" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/css/style.css" />
+  <!-- Phones get a notice; computers, smartboards and iPads load the app -->
+  <script src="/js/device-gate.js"></script>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
+  <link rel="preconnect" href="https://firestore.googleapis.com" crossorigin />
+  <link rel="modulepreload" href="https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js" />
+</head>
+<body>
+  <!-- Loading -->
+  <section id="scr-loading" class="screen center"><div class="spinner"></div></section>
+
+  <!-- Sign in -->
+  <section id="scr-auth" class="screen center hidden">
+    <div class="card auth">
+      <img src="assets/logo.svg" style="height:36px; width:auto;" class="app-logo" alt="" />
+      <h1 class="wordmark">Easy<span>Note</span></h1>
+      <p class="muted">A smart board for teaching. Write on PDFs and blank boards, and everything saves to the cloud as you go.</p>
+      <button id="btn-google" class="btn primary big"><svg width="20" height="20" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="m6.3 14.7 6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-8l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"/></svg>Continue with Google</button>
+      <p id="auth-err" class="err"></p>
+    </div>
+  </section>
+
+  <!-- Create account (first sign-in) -->
+  <section id="scr-signup" class="screen center hidden">
+    <form id="signup-form" class="card auth">
+      <img id="su-photo" class="avatar lg" alt="" />
+      <h1>Create your account</h1>
+      <p class="muted" id="su-email"></p>
+      <label>Your name<input id="su-name" required maxlength="60" /></label>
+      <label>Phone number<input id="su-phone" type="tel" inputmode="tel" required maxlength="20" placeholder="01XXXXXXXXX" pattern="(\+?88)?01[3-9][0-9]{8}" title="Bangladeshi mobile number, e.g. 01712345678" /></label>
+      <label>I am a
+        <select id="su-role"><option>Teacher</option><option>Student</option><option>Other</option></select>
+      </label>
+      <button class="btn primary big" type="submit">Create account</button>
+      <button class="btn ghost" type="button" id="su-cancel">Use a different Google account</button>
+    </form>
+  </section>
+
+  <!-- Library -->
+  <section id="scr-library" class="screen hidden">
+    <header class="lib-head">
+      <div class="row">
+        <button class="ibtn menu-btn" id="btn-menu" title="Menu" aria-label="Open menu" aria-controls="drawer" aria-expanded="false">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+        </button>
+        <div class="brand"><img src="assets/logo.svg" style="height:36px; width:auto;" class="app-logo sm" alt="" /><span class="wordmark">Easy<span>Note</span></span></div>
+      </div>
+      <div class="row">
+        <button class="btn primary hidden-top" id="btn-upgrade">Upgrade</button>
+        <button class="btn" id="btn-full-top" title="Full screen (F)"><i data-icon="max"></i><span id="full-top-label">Full screen</span></button>
+        <button class="avatar-btn" id="btn-avatar" title="Menu"><img id="me-photo-top" class="avatar" src="assets/avatar.jpg" alt="" /></button>
+      </div>
+    </header>
+
+    <!-- side bar -->
+    <div class="drawer-scrim hidden" id="drawer-scrim"></div>
+    <aside class="drawer" id="drawer" aria-hidden="true">
+      <div class="drawer-top">
+        <div class="brand"><img src="assets/logo.svg" style="height:36px; width:auto;" class="app-logo sm" alt="" /><span class="wordmark">Easy<span>Note</span></span></div>
+        <button class="ibtn" id="drawer-close" title="Close" aria-label="Close menu"><i data-icon="x"></i></button>
+      </div>
+
+      <div class="profile-card">
+        <img id="me-photo" class="avatar lg2" src="assets/avatar.jpg" alt="" />
+        <div class="profile-info">
+          <b id="me-name"></b>
+          <span id="me-email"></span>
+          <span id="me-phone"></span>
+        </div>
+      </div>
+      <div class="sub-line"><span class="sub-badge" id="sub-drawer"></span></div>
+
+      <nav class="menu">
+        <button class="menu-item upgrade-item hidden" data-act="upgrade"><i data-icon="crown"></i><span class="mi-text"><b>Upgrade plan</b><small>Unlock 6 months or 1 year</small></span><i data-icon="right" class="mi-go"></i></button>
+        <button class="menu-item hidden" id="btn-admin" data-act="admin"><i data-icon="shield"></i><span>Admin panel</span></button>
+        <button class="menu-item" data-act="manual"><i data-icon="book"></i><span>User manual</span></button>
+        <a class="menu-item wa-item" href="https://chat.whatsapp.com/F68BWVQzshNAz0PBTLztFN?s=cl&amp;p=i&amp;mlu=4&amp;ilr=4&amp;iam=2" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M17.5 14.4c-.3-.1-1.8-.9-2-1-.3-.1-.5-.1-.7.1-.2.3-.8 1-.9 1.2-.2.2-.3.2-.6.1-.3-.1-1.2-.5-2.4-1.5-.9-.8-1.5-1.8-1.6-2.1-.2-.3 0-.5.1-.6l.4-.5c.1-.2.2-.3.3-.5.1-.2 0-.4 0-.5l-.9-2.2c-.2-.6-.5-.5-.7-.5h-.6c-.2 0-.5.1-.8.4-.3.3-1 1-1 2.4s1 2.8 1.2 3c.1.2 2 3.1 4.9 4.3.7.3 1.2.5 1.7.6.7.2 1.3.2 1.8.1.6-.1 1.8-.7 2-1.4.2-.7.2-1.3.2-1.4-.1-.1-.3-.2-.6-.3zM12 21.8c-1.8 0-3.5-.5-5-1.4l-.4-.2-3.7 1 1-3.6-.2-.4C2.7 15.6 2.2 13.8 2.2 12 2.2 6.6 6.6 2.2 12 2.2c2.6 0 5.1 1 6.9 2.9 1.8 1.8 2.9 4.3 2.9 6.9 0 5.4-4.4 9.8-9.8 9.8zM20.5 3.5C18.2 1.2 15.2 0 12 0 5.4 0 0 5.4 0 12c0 2.1.6 4.2 1.6 6L0 24l6.2-1.6c1.8 1 3.8 1.5 5.8 1.5 6.6 0 12-5.4 12-12 0-3.2-1.2-6.2-3.5-8.4z"/></svg><span>Join WhatsApp community</span>
+        </a>
+        <button class="menu-item" id="btn-full-lib"><i data-icon="max"></i><span id="full-lib-label">Full screen</span></button>
+        <button class="menu-item logout-item" id="btn-logout"><i data-icon="logout"></i><span>Sign out</span></button>
+      </nav>
+
+      <div class="drawer-foot">
+        <button class="menu-item danger" id="btn-delete-account"><i data-icon="trash"></i><span>Delete my account</span></button>
+        <p class="muted small">Your notes are private and saved to your account.</p>
+      </div>
+    </aside>
+    <main class="lib">
+      <div class="expired-banner hidden" id="expired-banner">
+        <b>Your subscription has ended.</b> You can still download your notes as PDF. To create or open notes again, choose a plan.
+        <button class="btn primary" id="btn-renew" style="margin-left:10px">Choose a plan</button>
+      </div>
+      <div class="lib-actions">
+        <button class="tile new" id="new-black"><div class="tile-prev black"><i data-icon="plus"></i></div><span>Blank board</span></button>
+        <button class="tile new" id="new-white"><div class="tile-prev white"><i data-icon="plus"></i></div><span>White board</span></button>
+        <button class="tile new" id="new-pdf"><div class="tile-prev pdf"><i data-icon="file"></i></div><span>Open a PDF</span></button>
+        <input type="file" id="pdf-input" accept="application/pdf" hidden />
+      </div>
+      <h2>My notes</h2>
+      <div id="nb-grid" class="nb-grid"></div>
+      <p id="nb-empty" class="muted hidden">No notes yet. Start a blank board or open a PDF.</p>
+    </main>
+  </section>
+
+  <!-- Admin -->
+  <section id="scr-admin" class="screen hidden">
+    <div class="adm-layout">
+      <aside class="adm-side">
+        <div class="brand"><img src="assets/logo.svg" style="height:36px; width:auto;" class="app-logo sm" alt="" /><span class="wordmark">Easy<span>Note</span></span><span class="tag">Admin</span></div>
+        <nav class="adm-nav">
+          <button data-sec="overview" class="on"><i data-icon="grid"></i><span>Overview</span></button>
+          <button data-sec="revenue"><i data-icon="chart"></i><span>Revenue</span></button>
+          <button data-sec="payments"><i data-icon="wallet"></i><span>Payments</span><em class="nav-count hidden" id="adm-pending-count"></em></button>
+          <button data-sec="users"><i data-icon="users"></i><span>Users</span></button>
+          <button data-sec="plans"><i data-icon="crown"></i><span>Plans &amp; pricing</span></button>
+          <button data-sec="settings"><i data-icon="settings"></i><span>Settings</span></button>
+        </nav>
+        <div class="adm-side-foot">
+          <button class="menu-item" id="adm-refresh"><i data-icon="refresh"></i><span>Refresh data</span></button>
+          <button class="menu-item" id="adm-back"><i data-icon="home"></i><span>Back to my notes</span></button>
+        </div>
+      </aside>
+
+      <main class="adm-main">
+        <!-- Overview -->
+        <section class="adm-sec" data-sec="overview">
+          <div class="sec-head"><h1>Overview</h1><p class="muted">Users and how much EasyNote is being used.</p></div>
+          <div class="stats" id="adm-stats"></div>
+        </section>
+
+        <!-- Revenue -->
+        <section class="adm-sec hidden" data-sec="revenue">
+          <div class="sec-head"><h1>Revenue</h1><p class="muted">From approved payments. Payments approved by hand use the plan price at the time you look.</p></div>
+          <div class="stats" id="adm-rev-tiles"></div>
+          <div class="panel">
+            <div class="panel-head"><h3>Revenue by month</h3><span class="muted small">Last 12 months</span></div>
+            <div class="chart-wrap" id="adm-rev-chart"></div>
+            <details class="tbl-view"><summary>Show as table</summary><table class="utable" id="adm-rev-table"></table></details>
+          </div>
+          <div class="two-col">
+            <div class="panel"><div class="panel-head"><h3>By plan</h3></div><div id="adm-rev-plan" class="hbars"></div></div>
+            <div class="panel"><div class="panel-head"><h3>By payment method</h3></div><div id="adm-rev-method" class="hbars"></div></div>
+          </div>
+        </section>
+
+        <!-- Payments -->
+        <section class="adm-sec hidden" data-sec="payments">
+          <div class="sec-head row-between">
+            <div><h1>Payments</h1><p class="muted">Payments that were checked automatically appear as approved. Anything unusual waits here for you.</p></div>
+            <label class="check"><input type="checkbox" id="adm-pay-all" /> Show approved and rejected</label>
+          </div>
+          <div class="table-wrap"><table class="utable">
+            <thead><tr><th>User</th><th>Plan</th><th>Amount</th><th>Transaction ID</th><th>Method</th><th>Sent</th><th>Status</th><th></th></tr></thead>
+            <tbody id="adm-pays"></tbody>
+          </table></div>
+          <p class="muted small hidden" id="adm-pays-empty" style="margin-top:10px">No payment requests waiting.</p>
+        </section>
+
+        <!-- Users -->
+        <section class="adm-sec hidden" data-sec="users">
+          <div class="sec-head row-between">
+            <div><h1>Users</h1><p class="muted">Everyone who has an account, newest first.</p></div>
+            <input id="adm-search" class="search" placeholder="Search name, email or phone" />
+          </div>
+          <div class="table-wrap"><table class="utable">
+            <thead><tr><th>User</th><th>Joined</th><th>Last active</th><th>Notes</th><th>Pages</th><th>Status</th><th>Subscription ends</th></tr></thead>
+            <tbody id="adm-users"></tbody>
+          </table></div>
+        </section>
+
+        <!-- Plans -->
+        <section class="adm-sec hidden" data-sec="plans">
+          <div class="sec-head"><h1>Plans &amp; pricing</h1><p class="muted">Users see these prices on the Upgrade page, and <b>Pay now</b> opens the link you set. Automatic payment checks use these prices to decide which plan was bought.</p></div>
+          <form id="adm-plans-form" class="plan-edit-grid">
+            <div class="panel plan-edit">
+              <h3>6 months</h3>
+              <label class="field">Price (৳)<input id="adm-p6" inputmode="decimal" placeholder="e.g. 1250" /></label>
+              <label class="field">SSLCommerz payment link<input id="adm-l6" type="url" placeholder="https://invoice.sslcommerz.com/…" /></label>
+            </div>
+            <div class="panel plan-edit">
+              <h3>1 year</h3>
+              <label class="field">Price (৳)<input id="adm-p12" inputmode="decimal" placeholder="e.g. 2000" /></label>
+              <label class="field">SSLCommerz payment link<input id="adm-l12" type="url" placeholder="https://invoice.sslcommerz.com/…" /></label>
+            </div>
+            <div class="form-foot"><button class="btn primary big">Save plans</button></div>
+          </form>
+        </section>
+
+        <!-- Settings -->
+        <section class="adm-sec hidden" data-sec="settings">
+          <div class="sec-head"><h1>Settings</h1></div>
+          <div class="adm-card">
+            <div><b>Free trial for new users</b><p class="muted small">How many days a new account can use EasyNote before it needs a subscription.</p></div>
+            <form class="row" id="adm-trial-form"><input type="number" id="adm-trial" min="0" max="3650" required /><span class="muted">days</span><button class="btn primary">Save</button></form>
+          </div>
+        </section>
+      </main>
+    </div>
+    <div class="chart-tip hidden" id="chart-tip"></div>
+  </section>
+
+  <!-- Editor -->
+  <section id="scr-editor" class="screen hidden">
+    <div id="stage"></div>
+
+    <div class="dock" id="dock">
+    <div class="topbar">
+      <button class="ibtn" id="btn-home" title="My notes"><i data-icon="home"></i></button>
+      <input id="nb-title" class="title-input" spellcheck="false" />
+      <span id="save-status" class="save ok" title="Saved"><i data-icon="cloud"></i><span>Saved</span></span>
+      <span class="sep"></span>
+      <button class="ibtn" id="btn-export" title="Download as PDF"><i data-icon="download"></i></button>
+      <button class="ibtn" id="btn-full" title="Full screen (F)"><i data-icon="max"></i></button>
+    </div>
+
+    <!-- main toolbar -->
+    <nav class="toolbar" id="toolbar">
+      <button class="tool" data-tool="select" title="Select, move, resize (V)"><i data-icon="cursor"></i></button>
+      <button class="tool" data-tool="pen" title="Pen (P)"><i data-icon="pen"></i><span class="dot" id="pen-dot"></span></button>
+      <button class="tool" data-tool="hl" title="Highlighter (H)"><i data-icon="hl"></i><span class="dot" id="hl-dot"></span></button>
+      <button class="tool" data-tool="laser" title="Laser pointer (L)"><i data-icon="laser"></i></button>
+      <button class="tool" data-tool="eraser" title="Eraser (E)"><i data-icon="eraser"></i></button>
+      <button class="tool" data-tool="insert" id="btn-shapes" title="Shapes and ready-made items (S)"><i data-icon="shapes"></i></button>
+      <button class="tool" data-tool="text" title="Text (T)"><i data-icon="text"></i></button>
+      <button class="tool" id="btn-image" title="Insert a picture (gallery or files)"><i data-icon="image"></i></button>
+      <input type="file" id="image-file" accept="image/*" hidden />
+      <button class="tool" data-tool="hand" title="Move the page (hold Space)"><i data-icon="hand"></i></button>
+      <span class="sep"></span>
+      <button class="tool" id="btn-undo" title="Undo (Ctrl+Z)"><i data-icon="undo"></i></button>
+      <button class="tool" id="btn-redo" title="Redo (Ctrl+Shift+Z)"><i data-icon="redo"></i></button>
+      <button class="tool" id="btn-clear" title="Clear this page"><i data-icon="trash"></i></button>
+    </nav>
+
+    <nav class="pagebar">
+      <button class="ibtn" id="pg-prev" title="Previous page (←)"><i data-icon="left"></i></button>
+      <button class="pg-count" id="pg-count" title="See all pages">1 / 1</button>
+      <button class="ibtn" id="pg-next" title="Next page (→)"><i data-icon="right"></i></button>
+      <button class="ibtn accent" id="pg-add" title="Add page after this one"><i data-icon="plus"></i></button>
+      <button class="ibtn" id="pg-all" title="All pages (G)"><i data-icon="grid"></i></button>
+      <span class="sep"></span>
+      <button class="ibtn" id="btn-zoom-out" title="Zoom out"><i data-icon="minus"></i></button>
+      <button class="ibtn txt" id="btn-fit" title="Fit to screen">Fit</button>
+      <button class="ibtn" id="btn-zoom-in" title="Zoom in"><i data-icon="plus"></i></button>
+    </nav>
+    </div>
+
+    <!-- pen settings -->
+    <div class="pop hidden" id="pop-pen">
+      <div class="pen-types" id="pen-types"></div>
+      <div class="swatches" id="pen-colors"></div>
+      <div class="pop-row"><span>Size</span><input type="range" id="pen-size" min="1" max="40" /><span class="size-prev" id="pen-size-prev"></span></div>
+      <label class="check"><input type="checkbox" id="shape-assist" checked /> Shape assist <small>(turns rough lines and circles into clean ones)</small></label>
+    </div>
+    <div class="pop hidden" id="pop-hl">
+      <div class="swatches" id="hl-colors"></div>
+      <div class="pop-row"><span>Size</span><input type="range" id="hl-size" min="8" max="60" /><span class="size-prev" id="hl-size-prev"></span></div>
+      <label class="check"><input type="checkbox" id="smart-hl" checked /> Snap to text in PDFs</label>
+      <p class="hint">Swipe across a line of text for a clean highlight. A scribble stays freehand.</p>
+    </div>
+    <div class="pop hidden" id="pop-eraser">
+      <div class="pop-row"><span>Size</span><input type="range" id="eraser-size" min="10" max="120" /></div>
+      <button class="btn danger" id="eraser-clear">Clear this page</button>
+    </div>
+    <div class="pop wide hidden" id="pop-shapes">
+      <div class="pop-row tight">
+        <label class="check"><input type="checkbox" id="fill-shapes" /> Filled</label>
+        <span class="muted small">Tap a shape, then drag on the page (or tap the page for the default size). Hold Shift for a perfect square or circle.</span>
+      </div>
+      <div id="shape-groups"></div>
+    </div>
+    <div class="pop hidden" id="pop-text">
+      <div class="pop-row"><span>Size</span><input type="range" id="text-size" min="16" max="160" /><span id="text-size-v"></span></div>
+      <div class="swatches" id="text-colors"></div>
+    </div>
+
+    <!-- selection toolbar -->
+    <div class="selbar hidden" id="selbar">
+      <div class="swatches mini" id="sel-colors"></div>
+      <span class="sep"></span>
+      <button class="ibtn" data-sel="thin" title="Thinner"><i data-icon="minus"></i></button>
+      <button class="ibtn" data-sel="thick" title="Thicker"><i data-icon="plus"></i></button>
+      <button class="ibtn" data-sel="fill" title="Fill on/off"><i data-icon="fill"></i></button>
+      <button class="ibtn" data-sel="dup" title="Duplicate (Ctrl+D)"><i data-icon="copy"></i></button>
+      <button class="ibtn" data-sel="front" title="Bring to front"><i data-icon="up"></i></button>
+      <button class="ibtn" data-sel="back" title="Send to back"><i data-icon="down"></i></button>
+      <button class="ibtn danger" data-sel="del" title="Delete (Del)"><i data-icon="trash"></i></button>
+    </div>
+
+    <!-- all pages -->
+    <div class="overlay hidden" id="pages-view">
+      <div class="ov-head">
+        <h2>All pages</h2>
+        <div class="row">
+          <span class="muted small">Add a page:</span>
+          <button class="btn" data-addbg="black">Black</button>
+          <button class="btn" data-addbg="white">White</button>
+          <button class="btn" data-addbg="grid">Grid</button>
+          <button class="btn" data-addbg="lines">Lined</button>
+          <button class="btn" data-addbg="dgrid">Dark grid</button>
+          <button class="btn" data-addbg="board">Green board</button>
+          <button class="ibtn" id="pages-close" title="Close (Esc)"><i data-icon="x"></i></button>
+        </div>
+      </div>
+      <div class="pages-grid" id="pages-grid"></div>
+    </div>
+
+    <div class="toast hidden" id="toast"></div>
+  </section>
+
+  <div class="modal hidden" id="plans">
+    <div class="card plans-card">
+      <button class="ibtn plans-x" id="plans-close" title="Close"><i data-icon="x"></i></button>
+
+      <!-- step 1: pick a plan -->
+      <div id="plans-step1" class="plans-step">
+        <div class="plans-head">
+          <h2>Upgrade Notation<span class="accent">+</span></h2>
+          <p class="muted" id="plans-sub"></p>
+        </div>
+        <div class="notice hidden" id="plans-pending"></div>
+        <div class="plan-grid">
+          <button class="plan" data-pay="6m">
+            <span class="plan-name">6 months</span>
+            <span class="price" id="price-6m"></span>
+            <span class="per" id="per-6m"></span>
+            <span class="btn big">Pay now</span>
+          </button>
+          <button class="plan best" data-pay="1y">
+            <span class="ribbon">Best value</span>
+            <span class="plan-name">1 year</span>
+            <span class="price" id="price-1y"></span>
+            <span class="per" id="per-1y"></span>
+            <span class="btn primary big">Pay now</span>
+          </button>
+        </div>
+        <p class="plans-incl">Both plans include unlimited boards and PDFs, auto cloud save and PDF download.</p>
+        <button class="linkbtn" id="plans-paid">Already paid? Enter your transaction ID →</button>
+      </div>
+
+      <!-- step 2: confirm payment -->
+      <form id="pay-form" class="plans-step hidden">
+        <button type="button" class="linkbtn back" id="plans-back">← Back to plans</button>
+        <div class="plans-head">
+          <h2>Confirm your payment</h2>
+          <p class="muted">Paste the transaction ID from your SSLCommerz receipt (email or SMS). We check it with SSLCommerz instantly, and your plan switches on straight away.</p>
+        </div>
+        <div class="seg" id="pay-plan-seg">
+          <button type="button" data-v="6m">6 months</button>
+          <button type="button" data-v="1y">1 year</button>
+        </div>
+        <input type="hidden" id="pay-plan" value="1y" />
+        <label class="field">Transaction ID<input id="pay-txn" placeholder="e.g. 6A638D2EB00F6-6AF29BF1356F6" required maxlength="80" autocomplete="off" /></label>
+        <button class="btn primary big" type="submit">Confirm payment</button>
+        <div id="my-pays"></div>
+      </form>
+    </div>
+  </div>
+  <!-- User manual -->
+  <div class="modal hidden" id="manual">
+    <div class="card manual-card">
+      <div class="manual-head">
+        <h2>User manual</h2>
+        <button class="ibtn" id="manual-close" title="Close" aria-label="Close"><i data-icon="x"></i></button>
+      </div>
+      <div class="seg manual-tabs" role="tablist">
+        <button type="button" data-tab="desktop" class="on">Computer / Smartboard</button>
+        <button type="button" data-tab="ipad">iPad</button>
+        <button type="button" data-tab="features">Features</button>
+      </div>
+
+      <section class="manual-pane" data-pane="desktop">
+        <h3>Set up for teaching</h3>
+        <ol class="steps">
+          <li><b>Open EasyNote in Chrome or Edge</b><span>These give the smoothest pen and the steadiest full screen.</span></li>
+          <li><b>Tap <em>Full screen</em></b><span>It's at the top right of My notes, or press <kbd>F</kbd>. Opening a note also switches it on.</span></li>
+          <li><b>It stays full screen</b><span>Esc won't throw you out. It only turns off when you tap the full-screen button again.</span></li>
+          <li><b>Optional: install it as an app</b><span>Click the install icon in the address bar to open EasyNote from your desktop or taskbar, always full screen.</span></li>
+        </ol>
+        <div class="tipbox"><b>Smartboard tip:</b> use the pen or your finger to write. To move the page, choose the hand tool, hold <kbd>Space</kbd>, or use two fingers.</div>
+      </section>
+
+      <section class="manual-pane hidden" data-pane="ipad">
+        <h3>Install on iPad (best full screen)</h3>
+        <ol class="steps">
+          <li><b>Open EasyNote in Safari</b><span>Other browsers on iPad can't add it to the Home Screen.</span></li>
+          <li><b>Tap the Share button</b><span>The square with an arrow pointing up, at the top of Safari.</span></li>
+          <li><b>Tap <em>Add to Home Screen</em></b><span>Then tap <em>Add</em>.</span></li>
+          <li><b>Open EasyNote from your Home Screen</b><span>It opens full screen every time, with no ✕ button, and it never drops out.</span></li>
+        </ol>
+        <div class="tipbox"><b>Apple Pencil:</b> once you've used the Pencil, your palm and fingers no longer draw. One finger moves the page; two fingers pinch to zoom.</div>
+      </section>
+
+      <section class="manual-pane hidden" data-pane="features">
+        <button class="btn primary" id="guide-replay" style="margin-bottom:12px">Take the guided tour</button>
+        <h3>What you can do</h3>
+        <ul class="feat">
+          <li><b>☁️ Real-time cloud save</b><span>Every stroke is saved on your device straight away and to the cloud seconds later. If the computer shuts down, your work is safe.</span></li>
+          <li><b>📄 Open and mark up PDFs</b><span>Write, highlight and draw on any PDF, then download it with your notes on it.</span></li>
+          <li><b>✒️ Pens</b><span>Pen, pencil, marker, brush and dashed pens, in any colour and size. Your pen settings are remembered.</span></li>
+          <li><b>📐 Shape assist</b><span>Rough lines turn straight, and rough circles, rectangles and triangles turn into clean shapes.</span></li>
+          <li><b>🖍️ Smart highlighter</b><span>Swipe across PDF text for a neat highlight that snaps to the line.</span></li>
+          <li><b>🔴 Laser pointer</b><span>A glowing red trail that fades away, for pointing while you explain.</span></li>
+          <li><b>🧩 Ready-made shapes</b><span>Lines, arrows, polygons, tables, XY axes, graph paper, number lines, 3D shapes, logic gates, truth tables and circuit symbols.</span></li>
+          <li><b>✋ Select, move and resize</b><span>Change the colour or thickness, duplicate, delete, or bring to front.</span></li>
+          <li><b>🗂️ Pages</b><span>See all pages at a glance, and add, reorder or delete them. Backgrounds can be black, white, grid, lined, dark grid or green board.</span></li>
+          <li><b>⬇️ Download PDF</b><span>Download any note as a PDF, from inside the note or from My notes.</span></li>
+        </ul>
+        <h3>Keyboard shortcuts</h3>
+        <div class="keys">
+          <span><kbd>P</kbd> Pen</span><span><kbd>H</kbd> Highlighter</span><span><kbd>L</kbd> Laser</span><span><kbd>E</kbd> Eraser</span>
+          <span><kbd>V</kbd> Select</span><span><kbd>T</kbd> Text</span><span><kbd>S</kbd> Shapes</span><span><kbd>G</kbd> All pages</span>
+          <span><kbd>N</kbd> New page</span><span><kbd>←</kbd> <kbd>→</kbd> Change page</span><span><kbd>F</kbd> Full screen</span><span><kbd>Space</kbd> Move page</span>
+          <span><kbd>Ctrl/⌘ Z</kbd> Undo</span><span><kbd>Ctrl/⌘ ⇧ Z</kbd> Redo</span><span><kbd>Ctrl/⌘ D</kbd> Duplicate</span><span><kbd>Ctrl/⌘ +/−</kbd> Zoom</span>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <!-- first-time guide -->
+  <div class="modal hidden" id="guide"><div class="card guide-card">
+    <button class="ibtn guide-x" id="guide-skip" title="Close"><i data-icon="x"></i></button>
+    <div class="guide-ic" id="guide-ic"></div>
+    <h2 id="guide-title"></h2>
+    <p id="guide-text" class="muted"></p>
+    <ul id="guide-tips" class="guide-tips"></ul>
+    <div class="guide-dots" id="guide-dots"></div>
+    <div class="row guide-nav"><button class="btn" id="guide-back">Back</button><button class="btn primary" id="guide-next">Next</button></div>
+  </div></div>
+
+  <div class="modal hidden" id="dlg"><form class="card dlg" id="dlg-form">
+    <p id="dlg-msg"></p><input id="dlg-input" class="hidden" />
+    <div class="row end"><button type="button" class="btn" id="dlg-cancel">Cancel</button><button class="btn primary" id="dlg-ok">OK</button></div>
+  </form></div>
+  <div class="modal hidden" id="busy"><div class="card"><div class="spinner"></div><p id="busy-text">Working…</p></div></div>
+
+</body>
+</html>
+
+
+
+
