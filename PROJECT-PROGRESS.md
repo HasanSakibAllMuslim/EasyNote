@@ -18,10 +18,12 @@
 - `npm ci`: PASS; 270 packages installed, 0 audit findings. npm 11 warned that the optional `electron-winstaller` install script was not covered by its install-script approval list; the Windows x64 build nevertheless completed successfully.
 - `npm audit --audit-level=moderate`: PASS; 0 vulnerabilities.
 - `npm run test:release`: PASS; 5/5.
-- Windows x64 NSIS build: PASS once under installed Node 26.13, in a separate directory outside the repository and without signing credentials. This was a dependency/configuration build check, not a signed release build.
+- GitHub Actions run [43440817760](https://github.com/HasanSakibAllMuslim/EasyNote/actions/runs/43440817760): PASS on GitHub-hosted Windows Server 2025 with Node 22.23.4/npm 10.9.9. `npm ci`, all 5 preflight checks, `npm audit`, x64 NSIS packaging, unsigned-signature verification, and artifact upload all passed.
+- A separate local Windows x64 NSIS build also completed once under installed Node 26.13, outside the repository and without signing credentials.
 - Test installer: `E:\EasyNote-validation-output\EasyNote-Setup-1.0.0.exe`, 124,078,272 bytes, SHA-256 `07647DB6D603016B8732D15539F2B19152836CB94C242C38FEED4065E09B34C4`.
 - The test installer, `win-unpacked\EasyNote.exe`, `win-unpacked\resources\elevate.exe`, and generated NSIS uninstaller were reported/verified unsigned. The original `E:\EasyNote\dist` installer was not touched.
-- Later builds under Node 22.12.0 and 22.23.5 failed when Smart App Control blocked Electron Builder's attempt to launch the generated unsigned setup executable while extracting the NSIS uninstaller. Code Integrity events 3077/3033 name those temporary validation-output setup files. No security settings were changed, and the previously installed blocked `Un_K.exe` was not executed. GitHub-hosted runner behavior remains unverified.
+- Two local build attempts using npm-fetched Node 22 binaries were blocked when Smart App Control denied Electron Builder's temporary launch of the generated unsigned setup executable while extracting the NSIS uninstaller. Code Integrity events 3077/3033 name those temporary validation-output setup files. Hosted CI with Node 22 succeeded. No security settings were changed, and the previously installed blocked `Un_K.exe` was not executed.
+- GitHub Actions artifact: `EasyNote-Setup-1.0.0.exe`, 124,078,270 bytes; artifact API SHA-256 digest `f1c05b672d9ee7d944c5d781c9f0d3f6e39b156d7bf00f03f76419b242b26f75`; expires 2026-11-27. This is explicitly an **unsigned CI test artifact**, not a release.
 
 ## Remaining release blockers
 
