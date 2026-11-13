@@ -5,6 +5,7 @@ on:
   push:
     branches:
       - main
+      - 'codex/**'
     paths:
       - .github/workflows/windows-build.yml
       - README.md
