@@ -55,11 +55,17 @@ The `.blockmap` is an Electron differential-update artifact; this app does not c
 
 EasyNote 1.0.0 is currently unsigned. No SignPath Foundation approval or signing certificate is in place, and there is no published GitHub Release yet. A public repository or CI artifact does not mean a binary is signed or endorsed. A signed release requires a verified source build, an approved signer and signing policy, manual signing approval, and published verification details.
 
+Foundation preparation materials are drafts and are not evidence of acceptance: [eligibility audit](docs/SIGNPATH-FOUNDATION-ELIGIBILITY.md), [code-signing policy](CODE-SIGNING-POLICY.md), [privacy notice](PRIVACY.md), [release provenance](docs/RELEASE-PROVENANCE.md), [download-page draft](docs/DOWNLOAD-PAGE-DRAFT.md), and [application draft](docs/SIGNPATH-FOUNDATION-APPLICATION-DRAFT.md). The repository's existing Code Signing Gateway/KSP workflow is a separate commercial integration and is not used by SignPath Foundation's GitHub artifact signing route. The Foundation route has not been configured.
+
 ## License status
 
 EasyNote's original code and project documentation are released under the [MIT License](LICENSE). Third-party components retain their own licenses; see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). EasyNote's name and branding are not granted as trademarks by the MIT License.
 
 The SignPath Foundation's free open-source program has additional requirements beyond a public repository and an OSI-approved license. EasyNote has not been accepted into that program.
+
+## Privacy and release status
+
+See the [privacy notice draft](PRIVACY.md). It requires owner review against the actual release build. In particular, legacy UI copy about cloud saving, Google sign-in and payment verification does not match the inspected offline desktop data layer. EasyNote must resolve that discrepancy before publishing an accurate download page or applying for Foundation signing.
 
 ## Project layout
 
