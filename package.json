@@ -11,8 +11,9 @@
     "prepare:icon": "node scripts/prepare-icon.cjs",
     "pre-dist": "npm run prepare:icon",
     "pre-dist:dir": "npm run prepare:icon",
-    "test:release": "node --test tests/release-preflight.test.cjs",
+    "test:release": "node --test tests/release-preflight.test.cjs tests/signpath-ksp-sign.test.cjs",
     "dist": "electron-builder --win nsis",
+    "dist:signpath": "npm run prepare:icon && electron-builder --config scripts/electron-builder-signpath.cjs --win nsis",
     "dist:dir": "electron-builder --win nsis --dir"
   },
   "devDependencies": {

@@ -16,13 +16,22 @@ Electron Builder 26's supported signer extension point is `win.signtoolOptions.s
 
 The SignPath GitHub integration accepts a GitHub workflow artifact and returns a signed artifact. Applied to the current single-file PE artifact, this signs the **outer NSIS setup file after the build**. That cannot retroactively sign the separately generated uninstaller embedded inside it. SignPath supports nested signing for documented composite formats, but the reviewed artifact-configuration documentation does not establish that an NSIS self-extracting installer is a supported deep-signing container. Do not assume this route fixes `Un_K.exe`.
 
-The Foundation program requires project approval and eligibility. Its published conditions include an already released project and compatible open-source licensing for all included components. EasyNote's README currently says it has no published GitHub Release and has not been accepted; eligibility is therefore **not confirmed**. A maintainer must complete the application and component/license review.
+The Foundation program requires project approval and eligibility. Its published conditions require an already released project, active maintenance, an OSI-approved license for all components, no proprietary components, documented functionality, and manual approval for each release. EasyNote currently has no GitHub Release, so it does not yet meet the published released-form condition. Eligibility is **not currently met/confirmed**; a maintainer must publish the intended form and complete the application and component/license review. If the Foundation provides the certificate, the publisher identity is SignPath Foundation. The Foundation subscription is free; no paid price applies to it.
 
 ### SignPath Code Signing Gateway / KSP
 
-SignPath documents a Windows Key Storage Provider for `signtool.exe` as part of **Code Signing Gateway**. That route can in principle be called by Electron Builder's v26 custom signer hook while the generated uninstaller still exists, and again for the final installer. This is distinct from the Foundation GitHub artifact action. It requires the appropriate Gateway account/entitlement, an approved SignPath project/policy, provider installation on the runner, an API token, certificate identity, and timestamp configuration. None are available here, so no signing hook or secret-dependent workflow has been enabled or tested.
+SignPath documents the Windows Key Storage Provider (KSP) as a **Code Signing Gateway** crypto provider. The private key remains on SignPath's HSM; Windows SignTool uses the provider and requires an API token, organization/project/policy identifiers, and a public `.cer` file. SignPath documents the SignTool KSP parameters and places timestamp correctness on the caller. Gateway has no public price found in SignPath's documentation; request a quote and confirm KSP/CI entitlement with SignPath. Commercial certificates can be created from a CSR generated in SignPath (key held on its HSM) and issued by a trusted CA, or an existing RSA PFX can be imported; SignPath recommends HSM-generated key material over PFX import. A self-signed/test certificate is not trusted by Windows.
 
-Before implementing this route, confirm with SignPath that the account supports KSP use from GitHub-hosted Actions and an approval policy compatible with the uninstaller-before-packaging request. If using the Foundation program instead, obtain explicit SignPath guidance for signing this NSIS lifecycle; the generic post-build installer action is insufficient for the uninstaller issue.
+This repository now has an **opt-in local/runner integration**, not an enabled signing pipeline:
+
+- `npm run dist:signpath` uses the Electron Builder **26.18.1** `win.signtoolOptions.sign` callback, not the v27 `win.sign` schema.
+- The callback uses SignPath KSP + SignTool, adds SHA-256 Authenticode and RFC 3161 timestamp arguments, then runs SignTool verification. Electron Builder invokes the callback for its generated NSIS uninstaller before it embeds it, and for the final setup executable. Thus it covers both required signing moments when real Gateway credentials/provider are present.
+- It fails closed when Windows, required provider configuration, SHA-256, signing or signature verification is unavailable. The existing `npm run dist` and GitHub unsigned workflow are unchanged.
+- The integration has only been tested with mocked SignTool commands and configuration checks. No real SignPath request, signature, timestamp, KSP installation or signed installer has been tested.
+
+Before enabling this route in GitHub Actions, confirm with SignPath that the account/plan allows KSP use on GitHub-hosted Windows Actions runners and that its policies accept the Electron Builder NSIS lifecycle. The SignPath GitHub connector's artifact-based action is GitHub Actions-compatible and verifies GitHub workflow origin, but signs an uploaded artifact after the build; that alone cannot sign the pre-embedded NSIS uninstaller. If using the Foundation program instead, obtain explicit SignPath guidance for signing this NSIS lifecycle; do not assume the generic artifact action handles it.
+
+Public pricing: SignPath publishes the Foundation subscription as free, but I found no official public commercial Gateway price. Ask SignPath for a current quote. The separate publicly documented costs of a commercial certificate authority may vary by CA, certificate type, and identity-validation requirements; obtain a quote from the selected trusted CA.
 
 ## Required release signing sequence
 
@@ -33,12 +42,13 @@ Before implementing this route, confirm with SignPath that the account supports 
 5. Require Authenticode `Valid` status and inspect the RFC 3161 timestamp for every signed output. Never label a file signed based solely on a CI step's success message.
 6. Test install/uninstall on Windows with Smart App Control enabled. Confirm Code Integrity records no block for the generated `Un_*.exe` helper and confirm application data is retained.
 
-Use GitHub Actions **Secrets** for any API token; use repository variables for non-sensitive project/policy identifiers where appropriate. Do not request secrets in chat or commit a private key, PFX/P12, password, token, or signing certificate with private key material. The public certificate alone is not a private key, but does not make a signing workflow functional by itself.
+Use GitHub Actions **Secrets** for `SIGNPATH_API_TOKEN`; use repository variables for `SIGNPATH_ORGANIZATION_ID`, `SIGNPATH_PROJECT_SLUG`, `SIGNPATH_SIGNING_POLICY_SLUG`, `SIGNPATH_CERTIFICATE_FILE` (a runner path, not certificate contents), and optionally `SIGNPATH_TIMESTAMP_URL`. SignPath's KSP also needs `SIGNPATH_CONFIG_FILE` or its documented environment configuration and the installed Windows KSP. Do not request secrets in chat or commit a private key, PFX/P12, password, token, or signing certificate with private key material. The public certificate alone is not a private key, but does not make a signing workflow functional by itself.
 
 ## Human actions required
 
 - Apply to SignPath Foundation and wait for approval, or select/enable an appropriate Code Signing Gateway service.
-- Create the SignPath project, trusted-build policy, signing policy, artifact rules, and timestamp policy; confirm the intended signer identity.
-- Configure required GitHub secrets/variables directly in repository settings. Never send their values in chat.
+- For Gateway, ask SignPath for written confirmation of Gateway/KSP subscription pricing and GitHub-hosted Windows Actions support. Decide the publisher identity and obtain a trusted commercial certificate, ideally by generating the CSR inside SignPath and submitting it to the CA; import only the issued public certificate into SignPath.
+- Create the SignPath project and signing policy, configure KSP and policy approval requirements, and confirm timestamping, SHA-256 and certificate selection.
+- Configure the required GitHub secret and variables directly in repository settings. Install/configure the SignPath KSP on the Windows runner in a reviewed workflow change; then add a protected manual signing job that uses `npm run dist:signpath`, checks signatures on app executable, embedded uninstaller and final installer, and retains audit evidence. Never send secret values in chat.
 - Approve signing requests if the selected policy requires manual approval.
 - Review and approve a pull request before any workflow changes are merged or a release is published.
