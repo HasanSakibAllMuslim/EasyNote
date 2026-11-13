@@ -52,7 +52,7 @@ jobs:
 
       # npm's pre-dist lifecycle runs prepare:icon before Electron Builder.
       - name: Build complete Windows x64 NSIS installer
-        run: npm run dist
+        run: npm run dist -- --publish never
 
       - name: Validate installer and calculate SHA-256
         id: installer
