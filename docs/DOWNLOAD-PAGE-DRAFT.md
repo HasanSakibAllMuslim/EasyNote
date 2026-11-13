@@ -4,11 +4,11 @@
 
 ## About EasyNote
 
-EasyNote is an offline-first Windows desktop notebook for blank boards and local PDF markup. It supports board backgrounds, page organization, pen drawing, highlighting, shapes, text, PDF page navigation and zoom, and PDF export. Confirm this list against the exact release candidate before publication.
+EasyNote is an offline-first Windows desktop notebook for blank boards and local PDF markup. The inspected source implements board backgrounds, page organization, pen drawing, highlighting, shapes, text, PDF page navigation and zoom, IndexedDB persistence, and PDF export. These features were source-inspected, not all manually tested in this audit. Confirm behavior against the exact release candidate before publication.
 
 ## Data and connectivity
 
-Notebook pages and imported PDFs are stored locally in the app's IndexedDB database. The inspected desktop data layer does not currently provide cloud synchronization, Google sign-in, or real subscription/payment verification. Legacy interface wording currently suggests some of those features; resolve the mismatch before publishing a download page. User-opened external links require an internet connection and open in the system browser.
+Notebook pages and imported PDFs are stored locally in the app's IndexedDB database. The inspected desktop data layer does not currently provide cloud synchronization, Google sign-in, or real subscription/payment verification. Its payment verifier currently returns success without checking an external provider. Legacy interface wording suggests some of those features; resolve the mismatch before publishing a download page. User-opened external links require an internet connection and open in the system browser. See the [feature implementation audit](FEATURE-IMPLEMENTATION-AUDIT.md).
 
 The installer is configured to keep app data when EasyNote is uninstalled. Back up important notebooks before changing Windows profiles or manually removing application data.
 

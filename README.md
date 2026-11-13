@@ -19,6 +19,8 @@
 - Export a notebook as a PDF.
 - Use a pen, touch display, mouse, or smartboard in the desktop app.
 
+The desktop implementation currently saves locally. Cloud synchronization, Google sign-in, and genuine payment verification are not implemented in the inspected store layer despite legacy UI text that suggests otherwise. The subscription and payment screens are placeholders and are not a reliable account, billing, or access-control system. See the [feature and security audit](docs/SECURITY-ALERT-FIREBASE-KEY.md) before relying on those UI sections.
+
 ## Data and network use
 
 Notebook content and imported PDF bytes are stored in the app's local IndexedDB database. The desktop app uses the stable `easynote://app` origin so its local notebooks remain available between launches. The installer is configured to leave app data in place when EasyNote is uninstalled.
@@ -56,6 +58,8 @@ The `.blockmap` is an Electron differential-update artifact; this app does not c
 EasyNote 1.0.0 is currently unsigned. No SignPath Foundation approval or signing certificate is in place, and there is no published GitHub Release yet. A public repository or CI artifact does not mean a binary is signed or endorsed. A signed release requires a verified source build, an approved signer and signing policy, manual signing approval, and published verification details.
 
 Foundation preparation materials are drafts and are not evidence of acceptance: [eligibility audit](docs/SIGNPATH-FOUNDATION-ELIGIBILITY.md), [code-signing policy](CODE-SIGNING-POLICY.md), [privacy notice](PRIVACY.md), [release provenance](docs/RELEASE-PROVENANCE.md), [download-page draft](docs/DOWNLOAD-PAGE-DRAFT.md), and [application draft](docs/SIGNPATH-FOUNDATION-APPLICATION-DRAFT.md). The repository's existing Code Signing Gateway/KSP workflow is a separate commercial integration and is not used by SignPath Foundation's GitHub artifact signing route. The Foundation route has not been configured.
+
+The repository also contains a [feature implementation audit](docs/FEATURE-IMPLEMENTATION-AUDIT.md), [Google API key alert review](docs/SECURITY-ALERT-FIREBASE-KEY.md), and [Windows component inventory/SBOM](docs/COMPONENT-INVENTORY-WINDOWS.md). They do not replace owner review of Google Cloud settings or a release-candidate SBOM.
 
 ## License status
 

@@ -57,3 +57,9 @@ The active desktop store uses local IndexedDB and contains offline stubs for acc
 4. Establish actual Author, independent Reviewer, and Approver identities and required MFA; configure repository review protections.
 5. Ask SignPath in writing whether the existing NSIS output format and required uninstaller coverage can be accepted under Foundation's artifact model.
 6. Apply only after these items have human verification. No application was submitted by this preparation.
+
+## Step 18 audit update
+
+The Google API key alert is classified separately in [Security alert review](SECURITY-ALERT-FIREBASE-KEY.md): the source context is a Firebase Web API key, which Firebase documents as project identification rather than authorization. The owner still needs to verify Cloud Console restrictions, quotas, and Firebase rules. A [CycloneDX package-lock SBOM and Windows inventory](COMPONENT-INVENTORY-WINDOWS.md) are now present, but the SBOM does not enumerate all actual Windows runtime binaries or assets, and the existing local installer was found stale relative to this source branch. Therefore complete release artifact licensing evidence remains outstanding.
+
+The active source audit also confirms that cloud save, Google sign-in, and actual payment verification are not implemented in the offline store. The legacy UI claims must be resolved before release and before the Foundation download-page condition can be met.

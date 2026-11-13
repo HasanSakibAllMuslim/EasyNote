@@ -8,9 +8,9 @@ The desktop app's active notebook store uses IndexedDB on the local EasyNote app
 
 ## Network use
 
-Source inspection of the active desktop entry point and store found no active cloud synchronization or Firebase authentication integration. Firebase-related source files remain in the repository but are not imported by the current active entry point. The interface has legacy claims about cloud saving, Google sign-in, subscriptions, and payment verification that do not match the offline store implementation; those claims must be corrected or the functionality implemented and independently reviewed before a public release.
+Source inspection of the active desktop entry point and store found no active cloud synchronization or Firebase authentication integration. Firebase-related source files remain in the repository but are not imported by the current active entry point. The interface has legacy claims about cloud saving, Google sign-in, subscriptions, and payment verification that do not match the offline store implementation. The current payment verifier returns success without checking a provider, so no actual payment or entitlement should be inferred from the UI. These claims must be corrected or the functionality implemented and independently reviewed before a public release.
 
-The app contains user-triggered external links, including community and payment URLs. Opening them invokes an external browser and requires internet access. This notice has not yet established every destination's current privacy practices or the data those sites collect. Review the actual linked sites and disclose them before release.
+The app contains user-triggered external links, including community and payment URLs. Opening them invokes an external browser and requires internet access. This notice has not yet established every destination's current privacy practices or the data those sites collect. Review the actual linked sites and disclose them before release. The in-app payment flow is a placeholder and must not be used to sell a paid plan until server-side payment verification and entitlement handling exist.
 
 ## Local files and permissions
 
@@ -27,3 +27,5 @@ The current inspected desktop code does not establish an analytics or telemetry 
 - Identify external destinations and link their own privacy notices.
 - Provide a maintainer contact and data-rights request process if required.
 - Obtain qualified privacy/legal review for the intended distribution regions.
+
+For the credential alert classification and repository evidence, see [Security alert review](docs/SECURITY-ALERT-FIREBASE-KEY.md) and the [feature implementation audit](docs/FEATURE-IMPLEMENTATION-AUDIT.md).

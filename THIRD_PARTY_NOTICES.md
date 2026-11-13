@@ -17,4 +17,6 @@ Build-time npm dependencies and their license metadata are recorded in `package-
 
 The full provenance/license status of all logo, icon, and other files under `assets/` and `build/` is not currently documented. Add an attribution or compatible license/provenance record for each such asset before an eligibility claim. This notice is not a substitute for a release-specific SBOM or legal review.
 
-Before applying to SignPath Foundation, review the [eligibility audit](docs/SIGNPATH-FOUNDATION-ELIGIBILITY.md), build a Windows-specific inventory, document asset provenance, and confirm every distributed component meets the Foundation's current terms.
+`libs/css2` is included by the current packaging glob but has no active reference or documented provenance in the inspected app. Review whether it should remain in a future packaging revision, and record its upstream license before distribution. Do not assume unreferenced means safely removable without checking all use cases.
+
+See the [Windows component inventory and CycloneDX package-lock SBOM](docs/COMPONENT-INVENTORY-WINDOWS.md). The SBOM covers npm packages, not all binaries/assets in the installer. Before applying to SignPath Foundation, document asset provenance and confirm every distributed component meets the Foundation's current terms.
