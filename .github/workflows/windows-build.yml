@@ -9,6 +9,10 @@ on:
       - .github/workflows/windows-build.yml
       - README.md
       - README-SETUP.md
+      - PROJECT-PROGRESS.md
+      - RELEASE-CHECKLIST.md
+      - CODE-SIGNING.md
+      - WINDOWS-QA-REPORT.md
       - LICENSE
       - THIRD_PARTY_NOTICES.md
       - package.json
@@ -22,6 +26,7 @@ on:
       - js/**
       - libs/**
       - scripts/**
+      - tests/**
 
 permissions:
   contents: read
@@ -50,6 +55,12 @@ jobs:
       - name: Install locked dependencies
         run: npm ci
 
+      - name: Run release preflight checks
+        run: npm run test:release
+
+      - name: Audit locked dependencies
+        run: npm audit --audit-level=moderate
+
       # npm's pre-dist lifecycle runs prepare:icon before Electron Builder.
       - name: Build complete Windows x64 NSIS installer
         run: npm run dist -- --publish never
@@ -64,13 +75,19 @@ jobs:
           }
 
           $installer = $installers[0]
+          $signature = Get-AuthenticodeSignature -LiteralPath $installer.FullName
+          if ($signature.Status -ne 'NotSigned') {
+            throw "Expected this unsigned build workflow to produce an unsigned installer; got $($signature.Status)."
+          }
+
           $sha256 = (Get-FileHash -LiteralPath $installer.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
           "path=$($installer.FullName)" >> $env:GITHUB_OUTPUT
           $summary = @(
-            '## Windows x64 unsigned installer'
+            '## Windows x64 unsigned installer (verified)'
             ''
             "- File: $($installer.Name)"
             "- Size: $($installer.Length) bytes"
+            "- Authenticode: $($signature.Status)"
             "- SHA-256: $sha256"
           )
           $summary | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8
